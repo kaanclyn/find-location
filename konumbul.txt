@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İp adresiden konum bulma | promsoftware.com.tr</title>
+    <link rel="icon" href="/konumbul/promsoftware-logo.ico" type="image/png">
+    <style>
+        /* Genel sayfa stilini ayarlar */
+        html, body {
+            margin: 0; /* Tarayıcı varsayılan kenar boşluklarını sıfırlar */
+            padding: 0; /* Tarayıcı varsayılan iç boşluklarını sıfırlar */
+            height: 100%; /* Sayfa yüksekliğini %100 olarak ayarlar */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font seçimi */
+            background-color: #f0f0f0; /* Açık gri arka plan rengi */
+            color: #333; /* Koyu gri metin rengi */
+        }
+                
+        /* Harita veya benzeri içeriğin stilini tanımlar */
+        #map {
+            width: 100%; /* Haritanın genişliğini %100 yapar */
+            height: 100%; /* Haritanın yüksekliğini %100 yapar */
+            position: absolute; /* Mutlak konumlandırma kullanır */
+            top: 0; /* Üstten sıfır piksel boşluk bırakır */
+            left: 0; /* Soldan sıfır piksel boşluk bırakır */
+            z-index: 1; /* Haritanın diğer öğelerin altında veya üstünde konumlandırılmasını sağlar */
+        }
+        
+        /* Kullanıcı arayüzü için genel konteyner stilini tanımlar */
+        .container {
+            background-color: rgba(255, 255, 255, 0.85); /* Beyaz ve hafif buğulu arka plan rengi */
+            padding: 30px; /* Büyük iç dolgu */
+            border-radius: 8px; /* Hafif yuvarlatılmış kenarlar */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Hafif buğulu gölge efekti */
+            text-align: center; /* İçeriği ortalar */
+            max-width: 500px; /* Maksimum genişlik */
+            width: 90%; /* Yüzdeye dayalı genişlik */
+            position: absolute; /* Mutlak konumlandırma kullanır */
+            top: 50%; /* Üstten yüzde 50 konumlandırır */
+            left: 50%; /* Soldan yüzde 50 konumlandırır */
+            transform: translate(-50%, -50%); /* Yatay ve dikey konumlandırma ayarı */
+            z-index: 10; /* Öğenin diğer öğelerin üstünde konumlandırılmasını sağlar */
+        }
+
+        /* Gizlenmiş öğeler için stil tanımlar */
+        .hidden {
+            display: none; /* Öğeyi görünmez yapar */
+        }
+
+        /* İleri geri butonu gibi kayan buton için stil tanımlar */
+        .floating-button {
+            position: absolute; /* Mutlak konumlandırma kullanır */
+            bottom: 20px; /* Alt kısımdan 20 piksel uzaklıkta */
+            right: 20px; /* Sağ kısımdan 20 piksel uzaklıkta */
+            width: 60px; /* Genişlik 60 piksel */
+            height: 60px; /* Yükseklik 60 piksel */
+            background-color: #3498db; /* Mavi tonunda bir arka plan rengi */
+            color: white; /* Beyaz metin rengi */
+            border-radius: 50%; /* Daire şeklinde kenarlar */
+            text-align: center; /* İçeriği ortalar */
+            line-height: 60px; /* Satır yüksekliğiyle düğme yüksekliğini eşleştirir */
+            font-size: 18px; /* Metin boyutu */
+            cursor: pointer; /* İmleci el işareti yapar */
+            z-index: 11; /* Düğmeyi diğer öğelerin üstünde konumlandırır */
+            display: none; /* Başlangıçta görünmez */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Hafif gölge efekti */
+            transition: background-color 0.3s ease, transform 0.3s ease; /* Arka plan rengi ve transform geçiş efektleri */
+        }
+        
+        /* İleri geri butonu hover durumu */
+        .floating-button:hover {
+            background-color: #2980b9; /* Daha koyu mavi tonu hover durumu */
+            transform: scale(1.1); /* Büyüme efekti */
+        }
+
+        /* Başlık için stil tanımlar */
+        h1 {
+            color: #3498db; /* Mavi tonunda başlık rengi */
+            margin-bottom: 20px; /* Alt boşluk */
+            font-size: 28px; /* Büyük font boyutu */
+        }
+
+        /* Etiketler için stil tanımlar */
+        label {
+            font-weight: bold; /* Kalın font ağırlığı */
+            display: block; /* Blok seviyesi öğe olarak düzenler */
+            margin-bottom: 10px; /* Alt boşluk */
+            color: #555; /* Gri tonunda etiket rengi */
+            font-size: 16px; /* Orta font boyutu */
+        }
+
+        
+        /* Metin girişleri için stil tanımlar */
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 12px; /* Büyük dolgu */
+            margin-bottom: 20px; /* Büyük alt boşluk */
+            border: 1px solid #ddd; /* Hafif gri kenar çizgisi */
+            border-radius: 4px; /* Hafif yuvarlatılmış kenarlar */
+            font-size: 16px; /* Orta font boyutu */
+            color: #333; /* Koyu gri metin rengi */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Geçiş efektleri */
+        }
+        
+        /* Metin girişleri üzerine gelindiğinde stil tanımlar */
+        input[type="text"]:focus {
+            outline: none; /* Odak çerçevesini kaldırır */
+            border-color: #3498db; /* Mavi çerçeve rengi */
+            box-shadow: 0 0 5px #3498db; /* Hafif gölge efekti */
+        }
+        
+        /* Düğmeler için stil tanımlar */
+        button {
+        background-color: #3498db; /* Mavi tonunda bir arka plan rengi */
+        color: white; /* Beyaz metin rengi */
+        border: none; /* Kenar çizgisi yok */
+        padding: 14px 28px; /* Büyük dolgu, dikeyde 14px ve yatayda 28px */
+        cursor: pointer; /* Tıklanabilir işaretçi */
+        border-radius: 25px; /* Yuvarlatılmış kenarlar */
+        font-size: 18px; /* Büyük font boyutu */
+        transition: background-color 0.3s ease; /* Arka plan renginde geçiş efekti */
+        }
+
+        
+        /* Düğme üzerine gelindiğinde stil tanımlar */
+        button:hover {
+            background-color: #2980b9; /* Daha koyu mavi tonu hover durumu */
+        }
+        
+        /* Sonuç paneli için stil tanımlar */
+        .result {
+            margin-top: 30px; /* Büyük üst boşluk */
+            padding: 20px; /* Büyük dolgu */
+            border: 1px solid #ddd; /* Hafif gri kenar çizgisi */
+            border-radius: 8px; /* Hafif yuvarlatılmış kenarlar */
+            font-size: 16px; /* Orta font boyutu */
+            text-align: left; /* Metni sol hizalar */
+            background-color: #f9f9f9; /* Açık gri arka plan rengi */
+            color: #333; /* Koyu gri metin rengi */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Hafif gölge efekti */
+        }
+
+        
+        /* Soluklama animasyonu için stil tanımlar */
+        @keyframes breathing {
+            0% {
+                transform: scale(1); /* Ölçek 1 */
+                opacity: 1; /* Opaklık 1 */
+            }
+            50% {
+                transform: scale(1.05); /* Ölçek 1.05 */
+                opacity: 0.8; /* Opaklık 0.8 */
+            }
+            100% {
+                transform: scale(1); /* Ölçek 1 */
+                opacity: 1; /* Opaklık 1 */
+            }
+        }
+        
+        /* Renk döngüsü animasyonu için stil tanımlar */
+        @keyframes rgbText {
+            0% {
+                color: #ff7675; /* Başlangıç renk */
+            }
+            33% {
+                color: #74b9ff; /* Orta nokta renk */
+            }
+            66% {
+                color: #55efc4; /* Son nokta renk */
+            }
+            100% {
+                color: #ff7675; /* Dönüş renk */
+            }
+        }
+        
+       /* Mobil cihazlar için */
+        @media (max-width: 600px) { /* Ekran genişliği 600 piksel veya daha küçük olduğunda bu stiller uygulanır */
+            
+            .container { /* Ana konteynerin mobil cihazlarda görünümünü düzenler */
+                max-width: 80%; /* Maksimum genişliği %80 yapar */
+                padding: 8px; /* Küçük iç dolgu */
+                top: 45%; /* Konteynerin üstten %45 uzaklıkta olmasını sağlar */
+                transform: translate(-50%, -45%); /* Konteyneri yatay ve dikey olarak ortalar */
+            }
+
+            .floating-button { /* Mobil cihazlarda kayan butonun stilini düzenler */
+                width: 40px; /* Buton genişliğini 40 piksel yapar */
+                height: 40px; /* Buton yüksekliğini 40 piksel yapar */
+                line-height: 40px; /* Metnin butonun ortasında dikey olarak hizalanmasını sağlar */
+                font-size: 14px; /* Buton metin boyutunu küçültür */
+                bottom: 10px; /* Butonu alttan 10 piksel yukarıya yerleştirir */
+                right: 10px; /* Butonu sağdan 10 piksel sola yerleştirir */
+                display: none; /* Başlangıçta görünmez yapar */
+                z-index: 1000; /* Diğer öğelerin üzerinde olmasını sağlar */
+            }
+
+            h1 { /* Başlığın mobil cihazlarda görünümünü düzenler */
+                font-size: 20px; /* Başlık boyutunu küçültür */
+            }
+
+            input[type="text"] { /* Metin giriş alanının mobil cihazlarda görünümünü düzenler */
+                width: calc(100% - 8px); /* Genişliği, konteynerin genişliğinden 8 piksel eksik yapar */
+                padding: 6px; /* Küçük iç dolgu */
+                font-size: 10px; /* Metin boyutunu küçültür */
+            }
+
+            button { /* Düğmenin mobil cihazlarda görünümünü düzenler */
+                padding: 6px 12px; /* Küçük iç dolgu, dikeyde 6 piksel ve yatayda 12 piksel */
+                font-size: 10px; /* Düğme metin boyutunu küçültür */
+            }
+
+            .result { /* Sonuç metninin mobil cihazlarda görünümünü düzenler */
+                font-size: 10px; /* Metin boyutunu küçültür */
+            }
+        }
+        
+        /* Tabletler için */
+        @media (min-width: 601px) and (max-width: 1024px) { /* Ekran genişliği 601 piksel ile 1024 piksel arasında olduğunda bu stiller uygulanır */
+            
+            .container { /* Ana konteynerin tabletlerde görünümünü düzenler */
+                max-width: 70%; /* Maksimum genişliği %70 yapar */
+                padding: 12px; /* Orta büyüklükte iç dolgu */
+                top: 45%; /* Konteynerin üstten %45 uzaklıkta olmasını sağlar */
+                transform: translate(-50%, -45%); /* Konteyneri yatay ve dikey olarak ortalar */
+            }
+
+            .floating-button { /* Tabletlerde kayan butonun stilini düzenler */
+                width: 45px; /* Buton genişliğini 45 piksel yapar */
+                height: 45px; /* Buton yüksekliğini 45 piksel yapar */
+                line-height: 45px; /* Metnin butonun ortasında dikey olarak hizalanmasını sağlar */
+                font-size: 15px; /* Buton metin boyutunu ayarlar */
+                bottom: 12px; /* Butonu alttan 12 piksel yukarıya yerleştirir */
+                right: 12px; /* Butonu sağdan 12 piksel sola yerleştirir */
+                display: none; /* Başlangıçta görünmez yapar */
+                z-index: 1000; /* Diğer öğelerin üzerinde olmasını sağlar */
+            }
+
+            h1 { /* Başlığın tabletlerde görünümünü düzenler */
+                font-size: 24px; /* Başlık boyutunu ayarlar */
+            }
+
+            input[type="text"] { /* Metin giriş alanının tabletlerde görünümünü düzenler */
+                width: calc(100% - 12px); /* Genişliği, konteynerin genişliğinden 12 piksel eksik yapar */
+                padding: 8px; /* Orta büyüklükte iç dolgu */
+                font-size: 11px; /* Metin boyutunu ayarlar */
+            }
+
+            button { /* Düğmenin tabletlerde görünümünü düzenler */
+                padding: 8px 14px; /* Orta büyüklükte iç dolgu, dikeyde 8 piksel ve yatayda 14 piksel */
+                font-size: 11px; /* Düğme metin boyutunu ayarlar */
+            }
+
+            .result { /* Sonuç metninin tabletlerde görünümünü düzenler */
+                font-size: 11px; /* Metin boyutunu ayarlar */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div> <!-- Haritanın görüntüleneceği alan -->
+
+<div class="container" id="formContainer"> <!-- Ana konteyner, form ve diğer öğeler burada bulunur -->
+    <h1>Konum Bul</h1> <!-- Sayfanın başlığı -->
+    <label for="ipAddress">IP Adres:</label> <!-- IP adresi girişi için etiket -->
+    <p id="yourIpAddress"></p> <!-- Kullanıcının IP adresini gösterecek paragraf -->
+    <input type="text" id="ipAddress" placeholder="IP adresi girin..."> <!-- IP adresi giriş alanı -->
+    <button id="findLocationButton">Konumu Bul</button> <!-- Konumu bulma düğmesi -->
+    <input type="file" id="fileInput" style="display: none;"> <!-- Dosya girişi (gizli) -->
+    <p><a href="/konumbul/konumbul.txt" id="downloadLink" download="konumbul.txt"> <!-- Kod dosyasını indirme bağlantısı -->
+        <button id="downloadButton">Kod Dosyası</button> <!-- İndirme düğmesi -->
+    </a></p>
+    <p>&copy; 2021 <a href="http://promsoftware.com.tr" target="_blank">PromSoftware</a> Tüm Hakları Saklıdır.</p> <!-- Telif hakkı ve bağlantı -->
+    <div id="result" class="result"></div> <!-- Sonuçların gösterileceği alan -->
+</div>
+<div class="floating-button" id="floatingButton">IP</div> <!-- Kayan buton -->
+
+    <!-- Yandex üzerinden bir api anahtarı oluşrmanız gerikiyor tüm özellikleri kullanmak için -->
+    <script src="https://api-maps.yandex.com/2.1/?apikey=YOUR_API_KEY&lang=tr_TR" type="text/javascript"></script> 
+    <script>
+        
+        ymaps.ready(init); // Yandex Haritalar API'si hazır olduğunda init fonksiyonunu çağırır.
+        
+        var map; // Harita nesnesini temsil eden değişken.
+        var placemark; // Haritada işaretçi (placemark) nesnesini temsil eden değişken.
+
+        function init() {
+        map = new ymaps.Map("map", {
+            center: [41.0082, 28.9784], // Haritanın merkez koordinatları (İstanbul)
+            zoom: 12, // Harita başlangıç yakınlaştırma düzeyi
+            controls: ['zoomControl', 'geolocationControl', 'searchControl', 'typeSelector', 'fullscreenControl', 'routeButtonControl'] // Harita kontrol düğmeleri
+        });
+    
+        map.behaviors.enable('scrollZoom'); // Kaydırarak yakınlaştırmayı etkinleştir
+        map.behaviors.enable('drag'); // Sürükleyerek haritayı hareket ettirmeyi etkinleştir
+    
+        document.getElementById("findLocationButton").addEventListener("click", function() {
+        var ipAddress = document.getElementById("ipAddress").value.trim(); // IP adresi girişini alır
+
+        var ipRegex = /\b(?:\d{1,3}\.){3}\d{1,3}\b/; // IP adresi doğrulama için regex
+        if (!ipRegex.test(ipAddress)) {
+            alert("Lütfen geçerli bir IP adresi girin.");
+            return;
+        }
+
+        if (ipAddress === "95.70.146.155") { // Özel bir IP adresi için özel koordinatlar
+            var latitude = 40.836368371299294; // Özel IP adresine karşılık gelen latitude
+            var longitude = 29.358843996941182; // Özel IP adresine karşılık gelen longitude
+
+            var decimalLatitude = latitude.toFixed(6); // Latitude'i ondalık hale getirir
+            var decimalLongitude = longitude.toFixed(6); // Longitude'u ondalık hale getirir
+
+            var resultText = "Koordinatlar:<br>" + decimalLatitude + ", " + decimalLongitude; // Sonuç metnini oluşturur
+            document.getElementById("result").innerHTML = resultText; // Sonucu HTML içeriğine yerleştirir
+
+            if (placemark) {
+                map.geoObjects.remove(placemark); // Eğer işaretçi varsa haritadan kaldırır
+            }
+            placemark = new ymaps.Placemark([latitude, longitude], {
+                balloonContent: 'Özel Konum' // İşaretçi için balon içeriği
+            });
+            map.geoObjects.add(placemark); // İşaretçiyi haritaya ekler
+            map.setCenter([latitude, longitude], 12); // Haritayı özel koordinatlara merkezler
+
+            document.getElementById("formContainer").classList.add("hidden"); // Formu gizler
+            document.getElementById("floatingButton").style.display = "block"; // Kayan butonu gösterir
+
+            return; // Fonksiyondan çıkar
+        }
+    
+        var apiUrl = "https://ipinfo.io/" + ipAddress + "/json"; // IP adresi için API isteği oluşturulur
+        fetch(apiUrl) // API'ye istek yapılır
+        .then(response => response.json()) // API'den gelen yanıtı JSON olarak işler
+        .then(data => {
+            var coordinates = data.loc.split(','); // API yanıtından gelen koordinatları alır
+            var latitude = parseFloat(coordinates[0]); // Latitude'i ondalık sayıya dönüştürür
+            var longitude = parseFloat(coordinates[1]); // Longitude'u ondalık sayıya dönüştürür
+            
+            var decimalLatitude = latitude.toFixed(6); // Latitude'i 6 ondalık basamağa yuvarlar
+            var decimalLongitude = longitude.toFixed(6); // Longitude'u 6 ondalık basamağa yuvarlar
+            
+            var resultText = "Koordinatlar:<br>" + decimalLatitude + ", " + decimalLongitude; // Sonuç metnini oluşturur
+            document.getElementById("result").innerHTML = resultText; // Sonucu HTML içeriğine yerleştirir
+            
+            if (placemark) {
+                map.geoObjects.remove(placemark); // Eğer işaretçi varsa haritadan kaldırır
+            }
+            placemark = new ymaps.Placemark([latitude, longitude], {
+                balloonContent: 'Bulunan Konum' // İşaretçi için balon içeriği
+            });
+            map.geoObjects.add(placemark); // İşaretçiyi haritaya ekler
+            map.setCenter([latitude, longitude], 12); // Haritayı bulunan koordinatlara merkezler
+            
+            document.getElementById("formContainer").classList.add("hidden"); // Formu gizler
+            document.getElementById("floatingButton").style.display = "block"; // Kayan butonu gösterir
+            
+            return; // Fonksiyondan çıkar
+        })
+        .catch(error => {
+            alert("API isteği sırasında bir hata oluştu."); // Hata durumunda kullanıcıya uyarı verir
+            console.error(error); // Konsola hata detaylarını yazdırır
+        });
+    });
+
+    document.getElementById("floatingButton").addEventListener("click", function() {
+        // Balonu gizle ve formu göster
+        document.getElementById("formContainer").classList.remove("hidden"); // Formu görünür yapar
+        document.getElementById("floatingButton").style.display = "none"; // Kayan butonu gizler
+
+        // Haritadaki işaretçiyi kaldır
+        if (placemark) {
+            map.geoObjects.remove(placemark); // Eğer işaretçi varsa haritadan kaldırır
+        }
+
+        // Haritayı başlangıç konumuna döndür (İstanbul koordinatları)
+        map.setCenter([41.0082, 28.9784], 12); // Haritayı belirtilen koordinatlara merkezler
+
+        // Dosya yükleme inputunu gizle ve butonu sıfırla
+        document.getElementById("fileInput").style.display = "none"; // Dosya yükleme inputunu gizler
+        document.getElementById("downloadButton").innerText = "Kod Dosyası"; // Buton metnini yeniden ayarlar
+    });
+	
+	async function getIPAddress() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json'); // 'https://api.ipify.org?format=json' adresine bir GET isteği yapar ve sonucu response değişkenine atar
+        const data = await response.json(); // Gelen yanıtı JSON formatına çevirir ve data değişkenine atar
+        document.getElementById('ipAddress').value = data.ip; // IP adresini input alanına yazdırır
+        document.getElementById('yourIpAddress').innerText = "Sizin IP Adresiniz: " + data.ip; // IP adresini 'Sizin IP Adresiniz: [IP Adresi]' formatında bir paragraf alanına yazdırır
+    } catch (error) {
+        document.getElementById('yourIpAddress').innerText = 'IP adresi alınamadı.'; // Eğer bir hata oluşursa, paragraf alanına 'IP adresi alınamadı.' mesajını yazar
+        console.error('Error fetching IP address:', error); // Hata detaylarını konsola yazdırır
+    }
+}
+
+getIPAddress(); // getIPAddress fonksiyonunu çağırır, böylece sayfa yüklendiğinde IP adresi alınır ve gösterilir
+
+}
+</script>
+</body>
+</html>
+

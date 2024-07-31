@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İp adresiden konum bulma | promsoftware.com.tr</title>
+    <link rel="icon" href="/konumbul/promsoftware-logo.ico" type="image/png">
+    <link rel="stylesheet" href="style.css"> 
+     <script src="https://api-maps.yandex.com/2.1/?apikey=3ff9785b-d121-4a22-8e79-7ae811e8ed2a&lang=tr_TR" type="text/javascript"></script>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="container" id="formContainer">
+        <h1>Konum Bul</h1>
+        <label for="ipAddress">IP Adres:</label>
+        <p id="yourIpAddress"></p> 
+        <input type="text" id="ipAddress" placeholder="IP adresi girin...">
+        <button id="findLocationButton">Konumu Bul</button>
+        <input type="file" id="fileInput" style="display: none;">
+        <p><a href="/konumbul/konumbul.txt" id="downloadLink" download="konumbul.txt">
+            <button id="downloadButton">Kod Dosyası</button>
+        </a></p>
+        <p>&copy; 2021 <a href="http://promsoftware.com.tr" target="_blank">PromSoftware</a> Tüm Hakları Saklıdır.</p>
+        <div id="result" class="result"></div>
+    </div>
+    <div class="floating-button" id="floatingButton">IP</div>
+    <script src="bul.js"></script> 
+</body>
+</html>
